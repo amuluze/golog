@@ -66,6 +66,7 @@ func main() {
 		log.SetLogFile("./logs/nlog.log"),
 		log.SetLogLevel("info"),
 		log.SetLogOutput("file"),
+		log.SetLogFormat("json"),
 		log.SetLogFileRotationTime(time.Hour),
 		log.SetLogFileMaxAge(time.Hour*24*7),
 		log.SetLogFileSuffix(".%Y%m%d%H"),
