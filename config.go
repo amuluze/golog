@@ -1,8 +1,8 @@
-// Package log
+// Package golog
 // Date: 2022/8/4 13:14
 // Author: Amu
 // Description:
-package log
+package golog
 
 import (
 	"go.uber.org/zap/zapcore"

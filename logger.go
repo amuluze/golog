@@ -1,11 +1,11 @@
-// Package log
+// Package golog
 // Date: 2022/8/4 11:32
 // Author: Amu
 // Description:
-package log
+package golog
 
 import (
-	"fmt"
+	"context"
 	rotator "github.com/lestrrat-go/file-rotatelogs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -33,11 +33,9 @@ func InitLogger(options ...Option) {
 		logOutput:           "stdout",
 		logFileSuffix:       ".%Y%m%d",
 	}
-	fmt.Printf("config before update: %+v\n", config)
 	for _, option := range options {
 		option(config)
 	}
-	fmt.Printf("config after update: %+v\n", config)
 
 	encoder := getEncoder(config)
 	writer := getWriter(config)
@@ -95,7 +93,7 @@ func getWriter(config *Config) zapcore.WriteSyncer {
 	return zapcore.NewMultiWriteSyncer(zapcore.AddSync(_log), zapcore.AddSync(os.Stdout))
 }
 
-func (l *Logger) GetLogger(options ...Option) *Logger {
+func (l *Logger) CreateLogger(options ...Option) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	config := &Config{
@@ -108,24 +106,115 @@ func (l *Logger) GetLogger(options ...Option) *Logger {
 		logOutput:           "stdout",
 		logFileSuffix:       ".%Y%m%d",
 	}
-	fmt.Printf("config before update: %+v\n", config)
 	for _, option := range options {
 		option(config)
 	}
-	fmt.Printf("config after update: %+v\n", config)
 
 	if _, ok := l.loggers[config.name]; ok {
-		return nil
+		return
 	}
 	encoder := getEncoder(config)
 	writer := getWriter(config)
 	level := config.logLevel
 
 	newLogger := &Logger{
-		SugaredLogger: zap.New(zapcore.NewCore(encoder, writer, level)).Sugar(),
+		SugaredLogger: zap.New(zapcore.NewCore(encoder, writer, level), zap.AddCaller(), zap.AddCallerSkip(1)).Sugar(),
 		name:          config.name,
 		loggers:       make(map[string]*Logger),
 	}
 	l.loggers[config.name] = newLogger
-	return newLogger
+}
+
+func (l *Logger) NewTagContext(ctx context.Context, tag string) context.Context {
+	return context.WithValue(ctx, tagKey{}, tag)
+}
+
+func (l *Logger) FromTagContext(ctx context.Context) string {
+	v := ctx.Value(tagKey{})
+	if v != nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func (l *Logger) NewTraceIDContext(ctx context.Context, traceID string) context.Context {
+	return context.WithValue(ctx, traceIDKey{}, traceID)
+}
+
+func (l *Logger) FromTraceIDContext(ctx context.Context) string {
+	v := ctx.Value(traceIDKey{})
+	if v != nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func (l *Logger) NewUserIDContext(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, userIDKey{}, userID)
+}
+
+func (l *Logger) FromUserIDContext(ctx context.Context) string {
+	v := ctx.Value(userIDKey{})
+	if v != nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func (l *Logger) NewUserNameContext(ctx context.Context, userName string) context.Context {
+	return context.WithValue(ctx, userNameKey{}, userName)
+}
+
+func (l *Logger) FromUserNameContext(ctx context.Context) string {
+	v := ctx.Value(userNameKey{})
+	if v != nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func (l *Logger) WithContext(ctx context.Context) *zap.SugaredLogger {
+	var fields []interface{}
+
+	if v := l.FromTraceIDContext(ctx); v != "" {
+		fields = append(fields, TraceIDKey, v)
+	}
+
+	if v := l.FromUserIDContext(ctx); v != "" {
+		fields = append(fields, UserIDKey, v)
+	}
+
+	if v := l.FromUserNameContext(ctx); v != "" {
+		fields = append(fields, UserNameKey, v)
+	}
+
+	if v := l.FromTagContext(ctx); v != "" {
+		fields = append(fields, TagKey, v)
+	}
+
+	return l.SugaredLogger.With(fields...)
+}
+
+func (l *Logger) Info(args ...interface{}) {
+	l.SugaredLogger.Info(args...)
+}
+
+func (l *Logger) Infof(ctx context.Context, args ...interface{}) {
+	l.WithContext(ctx).Info(args...)
+}
+
+func (l *Logger) Error(args ...interface{}) {
+	l.SugaredLogger.Error(args...)
+}
+
+func (l *Logger) Errorf(ctx context.Context, args ...interface{}) {
+	l.WithContext(ctx).Error(args...)
 }
