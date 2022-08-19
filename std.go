@@ -6,9 +6,10 @@ package golog
 
 import (
 	"context"
+	"os"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
 )
 
 var std = &Logger{
@@ -64,6 +65,15 @@ func WithContext(ctx context.Context) {
 	std.SugaredLogger = std.WithContext(ctx)
 }
 
+func Debug(args ...interface{}) {
+	std.Debug(args...)
+}
+
+func Debugf(ctx context.Context, args ...interface{}) {
+	WithContext(ctx)
+	std.Info(args...)
+}
+
 func Info(args ...interface{}) {
 	std.Info(args...)
 }
@@ -73,6 +83,15 @@ func Infof(ctx context.Context, args ...interface{}) {
 	std.Info(args...)
 }
 
+func Warn(args ...interface{}) {
+	std.Warn(args...)
+}
+
+func Warnf(ctx context.Context, args ...interface{}) {
+	WithContext(ctx)
+	std.Warn(args...)
+}
+
 func Error(args ...interface{}) {
 	std.Error(args...)
 }
@@ -80,4 +99,22 @@ func Error(args ...interface{}) {
 func Errorf(ctx context.Context, args ...interface{}) {
 	WithContext(ctx)
 	std.Error(args...)
+}
+
+func Fatal(args ...interface{}) {
+	std.Fatal(args...)
+}
+
+func Fatalf(ctx context.Context, args ...interface{}) {
+	WithContext(ctx)
+	std.Fatal(args...)
+}
+
+func Panic(args ...interface{}) {
+	std.Panic(args...)
+}
+
+func Panicf(ctx context.Context, args ...interface{}) {
+	WithContext(ctx)
+	std.Panic(args...)
 }

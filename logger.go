@@ -6,13 +6,14 @@ package golog
 
 import (
 	"context"
-	rotator "github.com/lestrrat-go/file-rotatelogs"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	rotator "github.com/lestrrat-go/file-rotatelogs"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Logger struct {
@@ -203,6 +204,14 @@ func (l *Logger) WithContext(ctx context.Context) *zap.SugaredLogger {
 	return l.SugaredLogger.With(fields...)
 }
 
+func (l *Logger) Debug(args ...interface{}) {
+	l.SugaredLogger.Debug(args...)
+}
+
+func (l *Logger) Debugf(ctx context.Context, args ...interface{}) {
+	l.WithContext(ctx).Debug(args...)
+}
+
 func (l *Logger) Info(args ...interface{}) {
 	l.SugaredLogger.Info(args...)
 }
@@ -211,10 +220,34 @@ func (l *Logger) Infof(ctx context.Context, args ...interface{}) {
 	l.WithContext(ctx).Info(args...)
 }
 
+func (l *Logger) Warn(args ...interface{}) {
+	l.SugaredLogger.Warn(args...)
+}
+
+func (l *Logger) Warnf(ctx context.Context, args ...interface{}) {
+	l.WithContext(ctx).Warn(args...)
+}
+
 func (l *Logger) Error(args ...interface{}) {
 	l.SugaredLogger.Error(args...)
 }
 
 func (l *Logger) Errorf(ctx context.Context, args ...interface{}) {
 	l.WithContext(ctx).Error(args...)
+}
+
+func (l *Logger) Fatal(args ...interface{}) {
+	l.SugaredLogger.Fatal(args...)
+}
+
+func (l *Logger) Fatalf(ctx context.Context, args ...interface{}) {
+	l.WithContext(ctx).Fatal(args...)
+}
+
+func (l *Logger) Panic(args ...interface{}) {
+	l.SugaredLogger.Panic(args...)
+}
+
+func (l *Logger) Panicf(ctx context.Context, args ...interface{}) {
+	l.WithContext(ctx).Panic(args...)
 }
